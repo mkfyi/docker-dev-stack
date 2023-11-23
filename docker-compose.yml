@@ -1,0 +1,50 @@
+version: '3.7'
+
+services:
+  database:
+    image: mariadb
+    container_name: database
+    restart: always
+    networks:
+      - sql
+    environment:
+      MARIADB_ROOT_PASSWORD: secret
+    command:
+      - 'mariadbd'
+      - '--character-set-server=utf8mb4'
+      - '--collation-server=utf8mb4_unicode_ci'
+    ports:
+      - 3306:3306
+    volumes:
+      - ./data/mariadb:/var/lib/mysql
+
+  database_admin:
+    image: adminer
+    container_name: database_admin
+    restart: always
+    depends_on:
+      - database
+    networks:
+      - sql
+    environment:
+      ADMINER_DEFAULT_SERVER: database
+
+  amqp:
+    image: rabbitmq:3.12-management-alpine
+    container_name: amqp
+    restart: always
+    networks:
+      - rmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: secret
+    ports:
+      - 5672:5672
+    volumes:
+      - ./data/rabbitmq:/var/lib/rabbitmq
+
+networks:
+  sql:
+    external: true
+  rmq:
+    external: true
