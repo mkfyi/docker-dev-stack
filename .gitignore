@@ -2,3 +2,4 @@
 /data/
 *.log
 .init-lock
+docker-compose.override.yml
