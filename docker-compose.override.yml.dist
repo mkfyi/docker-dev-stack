@@ -1,0 +1,47 @@
+services:
+  proxy:
+    image: traefik:2.10
+    container_name: proxy
+    restart: always
+    networks:
+      - webproxy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./conf/traefik.yml:/traefik.yml
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.traefik-dashboard.rule=Host(`traefik.docker.localhost`)
+      - traefik.http.routers.traefik-dashboard.entrypoints=http
+      - traefik.http.services.traefik-dashboard.loadbalancer.server.port=8080
+
+  database_admin:
+    depends_on:
+      - proxy
+      - database
+    networks:
+      - sql
+      - webproxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.adminer.rule=Host(`sql.docker.localhost`)
+      - traefik.http.routers.adminer.entrypoints=http
+      - traefik.http.services.adminer.loadbalancer.server.port=8080
+
+  amqp:
+    depends_on:
+      - proxy
+    networks:
+      - rmq
+      - webproxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.rabbitmq.rule=Host(`amqp.docker.localhost`)
+      - traefik.http.routers.rabbitmq.entrypoints=http
+      - traefik.http.services.rabbitmq.loadbalancer.server.port=15672
+
+networks:
+  webproxy:
+    external: true
