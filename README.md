@@ -27,7 +27,7 @@ Technology stack for the development of backend applications / microservices.
 If used, the dashboard can be accessed under <http://traefik.docker.localhost>. In addition, the following URLs are provided:
 
 - <http://amqp.docker.localhost>
-<http://sql.docker.localhost>
+- <http://sql.docker.localhost>
 
 ### Credentials
 
