@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+
+# https://stackoverflow.com/a/246128
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+
+if [[ "${PWD}" != "${SCRIPT_DIR}" ]]; then
+  cd "${SCRIPT_DIR}"
+fi
+
+BOOTSTRAP_UP=0
+BOOTSTRAP_DOWN=0
+BOOTSTRAP_DESTROY=0
+DOCKER_NETWORKS=(
+  webproxy
+  sql
+  rmq
+)
+
+function has_network() {
+  if [ ! "$(docker network ls | grep "${1}")" ]; then
+    echo 0
+  else
+    echo 1
+  fi
+}
+
+case "${1:-up}" in
+  up)
+    BOOTSTRAP_UP=1
+    ;;
+  down)
+    BOOTSTRAP_DOWN=1
+    ;;
+  destroy)
+    BOOTSTRAP_DESTROY=1
+    ;;
+  *)
+    BOOTSTRAP_UP=-1
+    ;;
+esac
+
+if [ "${BOOTSTRAP_UP}" -eq -1 ]; then
+  cat <<EOF
+USAGE:
+  ./$(basename $0) MODE
+
+MODE:
+  up          Creates necessary docker networks and starts all containers
+  down        Stops all containers
+  destroy     Stops all containers and removes all docker networks
+
+EOF
+
+  exit 1
+fi
+
+BOOTSTRAP_TRAEFIK=-1
+
+if [ "${BOOTSTRAP_UP}" -eq 1 ]; then
+  for network in "${DOCKER_NETWORKS[@]}"; do
+    if [ "$(has_network "${network}")" -eq 0 ]; then
+      docker network create "${network}" &> /dev/null
+    fi
+  done
+
+  if ! test -f .init-lock; then
+    while true; do
+      read -p "[+] Do you want to use traefik to use *.docker.localhost urls? (y/n): " res
+
+      case "${res,,}" in
+        y)
+          BOOTSTRAP_TRAEFIK=1
+          ;;
+        n)
+          BOOTSTRAP_TRAEFIK=0
+          ;;
+        *)
+          ;;
+      esac
+
+      if [ "${BOOTSTRAP_TRAEFIK}" -gt -1 ]; then
+        break
+      fi
+    done
+
+    if [ "${BOOTSTRAP_TRAEFIK}" -eq 1 ]; then
+      cp docker-compose.override.yml.dist docker-compose.override.yml
+    fi
+
+    touch .init-lock
+  fi
+
+  docker-compose up -d
+fi
+
+if [[ "${BOOTSTRAP_DOWN}" -eq 1 || "${BOOTSTRAP_DESTROY}" -eq 1 ]]; then
+  docker-compose down
+fi
+
+if [ "${BOOTSTRAP_DESTROY}" -eq 1 ]; then
+  for network in "${DOCKER_NETWORKS[@]}"; do
+    if [ "$(has_network "${network}")" -eq 1 ]; then
+      docker network rm "${network}" &> /dev/null
+    fi
+  done
+fi
