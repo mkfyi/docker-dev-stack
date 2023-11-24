@@ -36,6 +36,10 @@ If used, the dashboard can be accessed under <http://traefik.docker.localhost>. 
 |MariaDB|`root`|`secret`|
 |RabbitMQ|`admin`|`secret`|
 
+## Credits
+
+- [Lukáš Hron (@lukashron)](https://github.com/lukashron) - for his [dark theme](https://github.com/lukashron/adminer-dark-theme) for Adminer
+
 ## LICENSE
 
 [docker-dev-stack](https://github.com/mkfyi/docker-dev-stack) is [MIT licensed](LICENSE.md).
