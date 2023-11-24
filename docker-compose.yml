@@ -28,6 +28,8 @@ services:
       - sql
     environment:
       ADMINER_DEFAULT_SERVER: database
+    volumes:
+      - ./conf/adminer/themes/lukashron-dark-theme.css:/var/www/html/adminer.css
 
   amqp:
     image: rabbitmq:3.12-management-alpine
